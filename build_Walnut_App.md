@@ -496,7 +496,7 @@ Sau khi chạy, hợp đồng sẽ được triển khai lên Seismic Devnet. Gh
 ## Bước 7: Chạy CLI để tương tác với hợp đồng
 Tạo file .env trong packages/cli:
 ```bash
-cd ../../cli
+cd ../cli
 nano .env
 ```
 Thêm nội dung:
