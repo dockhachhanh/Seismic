@@ -300,11 +300,10 @@ const CONTRACT_NAME = 'Walnut'
 const CONTRACT_DIR = join(__dirname, '../../contracts')
 
 export { CONTRACT_NAME, CONTRACT_DIR }
-
+```
 Viết utils.ts:
 Mở lib/utils.ts và thêm:
-typescript
-
+```typescript
 import fs from 'fs'
 import { type ShieldedWalletClient, getShieldedContract } from 'seismic-viem'
 import { Abi, Address } from 'viem'
