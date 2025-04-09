@@ -1,0 +1,24 @@
+# 🥜 Hướng Dẫn Xây Dựng Walnut App
+
+> *Ngày cập nhật: 09/04/2025*
+
+## 🎯 Mục tiêu
+
+Trong hướng dẫn này, bạn sẽ:
+
+- Thiết lập cấu trúc dự án **monorepo** cho ứng dụng **Walnut App**.
+- Khởi tạo hai thư mục con:
+  - `contracts/`: Chứa các **hợp đồng thông minh**.
+  - `cli/`: Chứa **giao diện dòng lệnh** để tương tác với hợp đồng.
+- Viết, kiểm thử và triển khai **hợp đồng thông minh Walnut** với các tính năng **bảo mật nâng cao (shielded smart contract)**.
+- Xây dựng CLI để **tương tác với hợp đồng đã triển khai**.
+- Chạy một trò chơi **giả lập giữa hai người chơi Alice và Bob** qua nhiều vòng.
+
+---
+
+## 🏗️ Cấu trúc dự án
+
+```bash
+walnut-app/
+├── contracts/    # Hợp đồng thông minh
+└── cli/          # Giao diện dòng lệnh
