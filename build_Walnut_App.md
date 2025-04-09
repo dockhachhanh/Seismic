@@ -22,3 +22,4 @@ Trong hướng dẫn này, bạn sẽ:
 walnut-app/
 ├── contracts/    # Hợp đồng thông minh
 └── cli/          # Giao diện dòng lệnh
+---
