@@ -1,80 +1,85 @@
-Hướng Dẫn Chi Tiết Từng Bước Để Tạo Dự Án Walnut App Trên Seismic Devnet
-Chuẩn bị trước khi bắt đầu
+# Hướng Dẫn Chi Tiết Từng Bước Để Tạo Dự Án Walnut App Trên Seismic Devnet
+## Chuẩn bị trước khi bắt đầu
 Trước khi bắt đầu, bạn cần chuẩn bị một số công cụ cơ bản:
 Máy tính với hệ điều hành hỗ trợ terminal (Windows, macOS, hoặc Linux).
 
-Node.js và npm: Đảm bảo bạn đã cài đặt Node.js (phiên bản >= 18.x) và npm. Bạn có thể kiểm tra bằng lệnh:
-bash
+## Cài đặt các thành phần cần thiết
+```bash
+# install dependencies, if needed
+sudo apt update && sudo apt upgrade -y
+sudo apt install curl git wget htop tmux build-essential jq make lz4 gcc unzip -y
+```
+## Cài đặt Node.js và npm: Đảm bảo bạn đã cài đặt Node.js (phiên bản >= 18.x) và npm.
+```bash
+# Download and install nvm:
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash
 
-node -v
-npm -v
+# in lieu of restarting the shell
+\. "$HOME/.nvm/nvm.sh"
 
-Nếu chưa cài, tải tại nodejs.org.
+# Download and install Node.js:
+nvm install 23
 
-Bun: Công cụ thay thế npm để quản lý dependencies. Cài đặt Bun bằng lệnh:
-bash
+# Verify the Node.js version:
+node -v # Should print "v23.11.0".
+nvm current # Should print "v23.11.0".
 
+# Verify npm version:
+npm -v # Should print "10.9.2".
+
+```
+## Bun: Công cụ thay thế npm để quản lý dependencies. Cài đặt Bun bằng lệnh:
+```bash
 curl -fsSL https://bun.sh/install | bash
-
+```
 Kiểm tra phiên bản:
-bash
-
+```bash
 bun -v
+```
 
-Git: Để clone repository và quản lý mã nguồn. Cài đặt qua git-scm.com nếu chưa có.
-
-** Foundry**: Công cụ để xây dựng và kiểm tra hợp đồng thông minh. Cài đặt bằng lệnh:
-bash
-
+## **Foundry**: Công cụ để xây dựng và kiểm tra hợp đồng thông minh. Cài đặt bằng lệnh:
+```bash
 curl -L https://foundry.paradigm.xyz | bash
-
+```
 Sau đó chạy:
-bash
-
+```bash
 foundryup
-
+```
 Kiểm tra:
-bash
-
+```bash
 forge --version
-
+```
 Seismic Tools: Cài đặt sforge và sanvil từ Seismic Systems:
-bash
-
+```bash
 curl -L https://seismic.systems/install.sh | bash
-
+```
 Kiểm tra:
-bash
-
+```bash
 sforge --version
 sanvil --version
-
-Bước 1: Thiết lập thư mục dự án
+```
+---
+## Bước 1: Thiết lập thư mục dự án
 Tạo thư mục dự án:
 Mở terminal và chạy lệnh sau để tạo thư mục walnut-app và di chuyển vào đó:
-bash
-
+```bash
 mkdir walnut-app
 cd walnut-app
-
+```
 Tạo cấu trúc thư mục con:
 Tạo thư mục packages với hai thư mục con contracts và cli:
-bash
-
+```bash
 mkdir -p packages/contracts packages/cli
-
-Bước 2: Khởi tạo Monorepo với Bun
-Khởi tạo dự án Bun tại thư mục gốc:
-bash
-
+```
+## Bước 2: Khởi tạo Monorepo với Bun
+### Khởi tạo dự án Bun tại thư mục gốc:
+```bash
 bun init -y && rm index.ts && rm tsconfig.json && touch .prettierrc && touch .gitmodules
-
+```
 Lệnh này khởi tạo một dự án Bun, sau đó xóa các file mặc định không cần thiết (index.ts, tsconfig.json), và tạo file .prettierrc (định dạng code) cùng .gitmodules (quản lý submodule).
-
-Cấu hình package.json cho monorepo:
+### Cấu hình package.json cho monorepo:
 Mở file package.json trong thư mục gốc và thay nội dung bằng:
-json
-
+```json
 {
   "workspaces": [
     "packages/**"
@@ -85,11 +90,10 @@ json
     "prettier": "^3.4.2"
   }
 }
-
-Cấu hình .prettierrc:
+```
+### Cấu hình .prettierrc:
 Mở file .prettierrc và thêm nội dung:
-json
-
+```json
 {
   "semi": false,
   "tabWidth": 2,
@@ -109,10 +113,10 @@ json
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true
 }
-
-Cấu hình .gitignore:
+```
+### Cấu hình .gitignore:
 Tạo hoặc mở file .gitignore trong thư mục gốc và thêm nội dung:
-
+```
 # Compiler files
 cache/
 out/
@@ -129,51 +133,46 @@ docs/
 .env
 
 node_modules/
-
-Cấu hình .gitmodules:
+```
+### Cấu hình .gitmodules:
 Mở file .gitmodules và thêm nội dung để quản lý thư viện forge-std:
-
+```
 [submodule "packages/contracts/lib/forge-std"]
     path = packages/contracts/lib/forge-std
     url = https://github.com/foundry-rs/forge-std
-
-Cài đặt dependencies:
+```
+### Cài đặt dependencies:
 Chạy lệnh sau trong thư mục gốc để cài đặt các gói phụ thuộc:
-bash
-
+```bash
 bun install
-
-Bước 3: Khởi tạo thư mục Contracts
+```
+## Bước 3: Khởi tạo thư mục Contracts
 Di chuyển vào thư mục contracts:
-bash
-
+```bash
 cd packages/contracts
-
+```
 Khởi tạo dự án với sforge:
-bash
-
+```bash
 sforge init --no-commit && rm -rf .github
-
+```
 Lệnh này tạo cấu trúc dự án hợp đồng (bao gồm src/, test/, foundry.toml) và cài đặt forge-std làm submodule.
 
 Cập nhật .gitignore:
 Mở file .gitignore trong packages/contracts và thay bằng:
-
+```
 .env
 broadcast/
 cache/
-
+```
 Tạo các file Walnut:
 Xóa các file mặc định và tạo các file mới:
-bash
-
+```bash
 rm -f src/Counter.sol test/Counter.t.sol script/Counter.s.sol
 touch src/Walnut.sol test/Walnut.t.sol script/Walnut.s.sol
-
-Viết hợp đồng Walnut.sol:
+```
+### Viết hợp đồng Walnut.sol:
 Mở src/Walnut.sol và thêm nội dung sau (đây là phiên bản hoàn chỉnh từ tài liệu):
-solidity
-
+```solidity
 // SPDX-License-Identifier: MIT License
 pragma solidity ^0.8.13;
 
@@ -242,27 +241,23 @@ contract Walnut {
         _;
     }
 }
-
-Bước 4: Khởi tạo thư mục CLI
+```
+## Bước 4: Khởi tạo thư mục CLI
 Di chuyển vào thư mục cli:
-bash
-
+```bash
 cd ../cli
-
+```
 Khởi tạo dự án Bun:
-bash
-
+```bash
 bun init -y
-
+```
 Tạo thư mục src và di chuyển file:
-bash
-
+```bash
 mkdir -p src && mv -t src index.ts
-
+```
 Cập nhật package.json:
 Mở package.json trong packages/cli và thay bằng:
-json
-
+```json
 {
     "name": "walnut-cli",
     "license": "MIT License",
@@ -280,28 +275,25 @@ json
         "typescript": "^5.6.3"
     }
 }
-
+```
 Cập nhật .gitignore:
 Mở .gitignore trong packages/cli và thay bằng:
-
+```
 node_modules
-
+```
 Cài đặt dependencies:
-bash
-
+```bash
 bun install
-
-Bước 5: Viết CLI để tương tác với hợp đồng
+```
+## Bước 5: Viết CLI để tương tác với hợp đồng
 Tạo thư mục lib:
-bash
-
+```bash
 mkdir -p lib
 touch lib/constants.ts lib/utils.ts
-
-Viết constants.ts:
+```
+### Viết constants.ts:
 Mở lib/constants.ts và thêm:
-typescript
-
+```typescript
 import { join } from 'path'
 
 const CONTRACT_NAME = 'Walnut'
@@ -355,11 +347,10 @@ function readContractABI(abiFile: string): Abi {
 }
 
 export { getShieldedContractWithCheck, readContractAddress, readContractABI }
-
-Viết app.ts:
+```
+### Viết app.ts:
 Mở src/app.ts và thêm:
-typescript
-
+```typescript
 import {
   type ShieldedContract,
   type ShieldedWalletClient,
@@ -458,12 +449,11 @@ export class App {
     console.log(`- Player ${playerName} sees number:`, result)
   }
 }
-
-Bước 6: Triển khai hợp đồng lên Seismic Devnet
+```
+## Bước 6: Triển khai hợp đồng lên Seismic Devnet
 Viết script triển khai:
 Mở packages/contracts/script/Walnut.s.sol và thêm:
-solidity
-
+```solidity
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
@@ -480,50 +470,47 @@ contract WalnutScript is Script {
         vm.stopBroadcast();
     }
 }
-
-Tạo file .env trong packages/contracts:
-bash
-
-touch .env
-
+```
+### Tạo file .env trong packages/contracts:
 Mở .env và thêm thông tin Seismic Devnet:
-
+```bash
+nano .env
+```
+```
 RPC_URL=https://node-2.seismicdev.net/rpc
 PRIVKEY=<your-private-key>
+```
+Thay <your-private-key> bằng khóa riêng của bạn. 
+Để lấy ETH testnet, sử dụng faucet tại: https://faucet-2.seismicdev.net/. Nhập địa chỉ ví của bạn để nhận ETH.
 
-Thay <your-private-key> bằng khóa riêng của bạn. Để lấy ETH testnet, sử dụng faucet tại: https://faucet-2.seismicdev.net/. Nhập địa chỉ ví của bạn để nhận ETH.
-
-Triển khai hợp đồng:
+### Triển khai hợp đồng:
 Từ packages/contracts, chạy:
-bash
-
+```bash
 source .env
 sforge script script/Walnut.s.sol:WalnutScript \
     --rpc-url $RPC_URL \
     --broadcast
-
+```
 Sau khi chạy, hợp đồng sẽ được triển khai lên Seismic Devnet. Ghi lại địa chỉ hợp đồng từ output.
 
-Bước 7: Chạy CLI để tương tác với hợp đồng
+## Bước 7: Chạy CLI để tương tác với hợp đồng
 Tạo file .env trong packages/cli:
-bash
-
+```bash
 cd ../../cli
-touch .env
-
+nano .env
+```
 Thêm nội dung:
-
+```
 CHAIN_ID=5124
 RPC_URL=https://node-2.seismicdev.net/rpc
 ALICE_PRIVKEY=<alice-private-key>
 BOB_PRIVKEY=<bob-private-key>
-
+```
 Thay <alice-private-key> và <bob-private-key> bằng hai khóa riêng khác nhau mà bạn đã lấy ETH từ faucet.
 
-Viết index.ts:
+### Viết index.ts:
 Mở src/index.ts và thêm:
-typescript
-
+```typescript
 import dotenv from 'dotenv'
 import { join } from 'path'
 import { seismicDevnet } from 'seismic-viem'
@@ -605,17 +592,38 @@ async function main() {
 }
 
 main()
-
+```
 Chạy CLI:
-bash
-
+```bash
 bun dev
-
+```
 Bạn sẽ thấy output tương tự như trong tài liệu, mô phỏng hai vòng chơi giữa Alice và Bob.
-
-Bước 8: Kiểm tra trên Explorer
+```
+=== Round 1 ===
+- Player Alice writing shake()
+- Player Alice writing hit()
+- Player Alice writing shake()
+- Player Alice writing hit()
+- Player Alice writing shake()
+- Player Alice writing hit()
+- Player Alice reading look()
+- Player Alice sees number: 7n
+=== Round 2 ===
+- Player Bob writing reset()
+- Player Bob writing hit()
+- Player Bob writing shake()
+- Player Bob writing hit()
+- Player Bob writing shake()
+- Player Bob writing hit()
+- Player Bob reading look()
+- Player Bob sees number: 3n
+=== Testing Access Control ===
+- Attempting Alice's look() in Bob's round (should revert)
+✅ Received expected revert
+```
+## Bước 8: Kiểm tra trên Explorer
 Sau khi triển khai và chạy CLI, bạn có thể kiểm tra giao dịch trên Seismic Devnet Explorer bằng cách nhập địa chỉ hợp đồng hoặc địa chỉ ví của bạn.
 
-Kết luận
+# Kết luận
 Bạn đã hoàn thành việc thiết lập và triển khai dự án "Walnut App" trên Seismic Devnet! Hướng dẫn này bao gồm toàn bộ quá trình từ cài đặt môi trường, cấu hình monorepo, viết và triển khai hợp đồng thông minh, đến xây dựng CLI để chơi trò chơi. Nếu bạn gặp bất kỳ vấn đề nào trong quá trình thực hiện, hãy cho mình biết để mình hỗ trợ nhé! Chúc bạn thành công và vui vẻ với dự án!
 
