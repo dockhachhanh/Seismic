@@ -346,15 +346,9 @@ export { getShieldedContractWithCheck, readContractAddress, readContractABI }
 ### Viết app.ts:
 Mở src/app.ts và thêm:
 ```typescript
-import {
-  type ShieldedContract,
-  type ShieldedWalletClient,
-  createShieldedWalletClient,
-  getShieldedContract,
-} from 'seismic-viem'
-import { Abi, Address, Chain, http } from 'viem'
+import { createWalletClient, createPublicClient, http } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { getShieldedContractWithCheck } from '../lib/utils'
+import { Abi, Address, Chain } from 'viem'
 
 interface AppConfig {
   players: Array<{
@@ -373,32 +367,29 @@ interface AppConfig {
 
 export class App {
   private config: AppConfig
-  private playerClients: Map<string, ShieldedWalletClient> = new Map()
-  private playerContracts: Map<string, ShieldedContract> = new Map()
+  private playerClients: Map<string, any> = new Map()
+  private publicClient: any
 
   constructor(config: AppConfig) {
     this.config = config
+    this.publicClient = createPublicClient({
+      chain: this.config.wallet.chain,
+      transport: http(this.config.wallet.rpcUrl),
+    })
   }
 
   async init() {
     for (const player of this.config.players) {
-      const walletClient = await createShieldedWalletClient({
+      const walletClient = createWalletClient({
         chain: this.config.wallet.chain,
         transport: http(this.config.wallet.rpcUrl),
         account: privateKeyToAccount(player.privateKey as `0x${string}`),
       })
       this.playerClients.set(player.name, walletClient)
-
-      const contract = await getShieldedContractWithCheck(
-        walletClient,
-        this.config.contract.abi,
-        this.config.contract.address
-      )
-      this.playerContracts.set(player.name, contract)
     }
   }
 
-  private getWalletClient(playerName: string): ShieldedWalletClient {
+  private getWalletClient(playerName: string): any {
     const client = this.playerClients.get(playerName)
     if (!client) {
       throw new Error(`Wallet client for player ${playerName} not found`)
@@ -406,41 +397,54 @@ export class App {
     return client
   }
 
-  private getPlayerContract(playerName: string): ShieldedContract {
-    const contract = this.playerContracts.get(playerName)
-    if (!contract) {
-      throw new Error(`Shielded contract for player ${playerName} not found`)
-    }
-    return contract
-  }
-
   async reset(playerName: string) {
     console.log(`- Player ${playerName} writing reset()`)
-    const contract = this.getPlayerContract(playerName)
     const walletClient = this.getWalletClient(playerName)
-    await walletClient.waitForTransactionReceipt({
-      hash: await contract.write.reset([], { gas: 100000n })
+    const hash = await walletClient.writeContract({
+      address: this.config.contract.address,
+      abi: this.config.contract.abi,
+      functionName: 'reset',
+      args: [],
+      gas: 100000n,
     })
+    await this.publicClient.waitForTransactionReceipt({ hash })
   }
 
   async shake(playerName: string, numShakes: number) {
     console.log(`- Player ${playerName} writing shake()`)
-    const contract = this.getPlayerContract(playerName)
     const walletClient = this.getWalletClient(playerName)
-    await contract.write.shake([numShakes], { gas: 50000n })
+    const hash = await walletClient.writeContract({
+      address: this.config.contract.address,
+      abi: this.config.contract.abi,
+      functionName: 'shake',
+      args: [numShakes],
+      gas: 50000n,
+    })
+    await this.publicClient.waitForTransactionReceipt({ hash })
   }
 
   async hit(playerName: string) {
     console.log(`- Player ${playerName} writing hit()`)
-    const contract = this.getPlayerContract(playerName)
     const walletClient = this.getWalletClient(playerName)
-    await contract.write.hit([], { gas: 100000n })
+    const hash = await walletClient.writeContract({
+      address: this.config.contract.address,
+      abi: this.config.contract.abi,
+      functionName: 'hit',
+      args: [],
+      gas: 100000n,
+    })
+    await this.publicClient.waitForTransactionReceipt({ hash })
   }
 
   async look(playerName: string) {
     console.log(`- Player ${playerName} reading look()`)
-    const contract = this.getPlayerContract(playerName)
-    const result = await contract.read.look()
+    const walletClient = this.getWalletClient(playerName)
+    const result = await this.publicClient.readContract({
+      address: this.config.contract.address,
+      abi: this.config.contract.abi,
+      functionName: 'look',
+      args: [walletClient.account.address], // Truyền địa chỉ của player
+    })
     console.log(`- Player ${playerName} sees number:`, result)
   }
 }
@@ -508,11 +512,34 @@ Mở src/index.ts và thêm:
 ```typescript
 import dotenv from 'dotenv'
 import { join } from 'path'
-import { seismicDevnet } from 'seismic-viem'
+import { defineChain } from 'viem'
 import { CONTRACT_DIR, CONTRACT_NAME } from '../lib/constants'
 import { readContractABI, readContractAddress } from '../lib/utils'
 import { App } from './app'
 
+// Định nghĩa Seismic Devnet với Chain ID 5124
+const seismicDevnet5124 = defineChain({
+  id: 5124,
+  name: 'Seismic Devnet',
+  network: 'seismic-devnet',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Ether',
+    symbol: 'ETH',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://node-2.seismicdev.net/rpc'],
+      webSocket: ['wss://node-2.seismicdev.net/ws'],
+    },
+  },
+  blockExplorers: {
+    default: { name: 'Seismic Explorer', url: 'https://explorer-2.seismicdev.net' },
+  },
+  testnet: true,
+})
+
+// Load environment variables from .env file
 dotenv.config()
 
 async function main() {
@@ -535,7 +562,7 @@ async function main() {
     `${CONTRACT_NAME}.json`
   )
 
-  const chain = seismicDevnet
+  const chain = seismicDevnet5124
 
   const players = [
     { name: 'Alice', privateKey: process.env.ALICE_PRIVKEY! },
