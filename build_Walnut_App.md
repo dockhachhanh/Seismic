@@ -180,15 +180,15 @@ contract Walnut {
     uint256 initialShellStrength;
     uint256 shellStrength;
     uint256 round;
-    suint256 initialKernel;
-    suint256 kernel;
+    uint256 initialKernel;
+    uint256 kernel;
     mapping(uint256 => mapping(address => uint256)) hitsPerRound;
 
     event Hit(uint256 indexed round, address indexed hitter, uint256 remaining);
     event Shake(uint256 indexed round, address indexed shaker);
     event Reset(uint256 indexed newRound, uint256 shellStrength);
 
-    constructor(uint256 _shellStrength, suint256 _kernel) {
+    constructor(uint256 _shellStrength, uint256 _kernel) {
         initialShellStrength = _shellStrength;
         shellStrength = _shellStrength;
         initialKernel = _kernel;
@@ -206,7 +206,7 @@ contract Walnut {
         emit Hit(round, msg.sender, shellStrength);
     }
 
-    function shake(suint256 _numShakes) public requireIntact {
+    function shake(uint256 _numShakes) public requireIntact {
         kernel += _numShakes;
         emit Shake(round, msg.sender);
     }
@@ -218,11 +218,12 @@ contract Walnut {
         emit Reset(round, shellStrength);
     }
 
-    function look() public view requireCracked onlyContributor returns (uint256) {
-        return uint256(kernel);
+    function look(address contributor) public view requireCracked returns (uint256) {
+        require(hitsPerRound[round][contributor] > 0, "NOT_A_CONTRIBUTOR");
+        return kernel;
     }
 
-    function set_number(suint256 _kernel) public {
+    function set_number(uint256 _kernel) public {
         kernel = _kernel;
     }
 
@@ -233,11 +234,6 @@ contract Walnut {
 
     modifier requireIntact() {
         require(shellStrength > 0, "SHELL_ALREADY_CRACKED");
-        _;
-    }
-
-    modifier onlyContributor() {
-        require(hitsPerRound[round][msg.sender] > 0, "NOT_A_CONTRIBUTOR");
         _;
     }
 }
